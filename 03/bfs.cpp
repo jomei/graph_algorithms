@@ -1,53 +1,69 @@
+#include <algorithm>
 #include <iostream>
-#include <vector>
+#include <limits>
 #include <queue>
+#include <unordered_map>
+#include <vector>
 
 using std::vector;
 using std::queue;
-using std::pair;
+using std::unordered_map;
 
-int run(vector<pair<bool, vector<int>>> &adj, queue<int>& q, int from, int to, int lvl) {
-  std::cout << from + 1 << "\n";
-  if(from == to) { return lvl; }
-  if(adj[from].first) { return -1; }
-  std::cout << "!\n";
-  adj[from].first = true;
-  for(int i = 0; i < adj[from].second.size(); ++i) {
-    int a = adj[from].second[i];
-    if(!adj[a].first) {
-      q.push(a);
-    }  
+
+int distance(vector<vector<int>> &adj, int from, int to) {
+  unordered_map<int, int> dist;
+  unordered_map<int, int> prev;
+
+  for (size_t i = 0; i < adj.size(); ++i) {
+    dist[i] = std::numeric_limits<int>::infinity();
+    prev[i] = -1;
   }
-  std::cout<<"?\n";
-  while(!(q.size() != 0)) {
-    int r = run(adj, q, q.front(), to, ++lvl);
-    std::cout<< "size:" << q.size() << "\n";
-    if(r != -1) return r;
+
+  queue<int> q;
+
+  q.push(from);
+  dist[from] = 0;
+
+  while (!q.empty()) {
+    auto u = q.front();
     q.pop();
+    auto &edges = adj[u];
+
+    for (auto e : edges) {
+      if (dist[e] == std::numeric_limits<int>::infinity()) {
+        q.push(e);
+        dist[e] = dist[u] + 1;
+        prev[e] = u;
+      }
+    }
   }
-  
-  return -1;
+
+  if (prev[to] == -1) return -1;
+
+  std::vector<int> result;
+
+  while (to != from) {
+    result.push_back(to);
+    to = prev[to];
+  }
+
+  return result.empty() ? -1 : result.size();
 }
 
-int distance(vector<pair<bool, vector<int>>> &adj, int from, int to) {
-  queue<int> q = {};
-  return run(adj, q, from, to, 0);
-}
-
-int main() {
+int main()
+{
   int n, m;
   std::cin >> n >> m;
-  vector<pair<bool, vector<int>>> adj(n);
+  vector< vector< int > > adj(n, vector< int >());
   for (int i = 0; i < m; i++) {
     int x, y;
     std::cin >> x >> y;
-    adj[x - 1].first = false;
-    adj[y - 1].first = false;
-    adj[x - 1].second.push_back(y - 1);
-    adj[y - 1].second.push_back(x - 1);
+    adj[x - 1].push_back(y - 1);
+    adj[y - 1].push_back(x - 1);
   }
-  int from, to;
-  std::cin >> from >> to;
-  from--, to--;
-  std::cout << distance(adj, from, to);
+  int s, t;
+  std::cin >> s >> t;
+  s--, t--;
+  std::cout << distance(adj, s, t);
+  return 0;
 }
