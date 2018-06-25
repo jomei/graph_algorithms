@@ -1,52 +1,79 @@
+#include <algorithm>
 #include <iostream>
-#include <vector>
-#include <queue>
 #include <limits>
+#include <queue>
+#include <unordered_map>
+#include <vector>
 
 using std::vector;
 using std::queue;
-using std::pair;
-using std::priority_queue;
+using std::unordered_map;
 
-vector<int>& run(vector<vector<int> > &adj, vector<vector<int> > &cost, int from, int to, vector<int>& result){
-  // std::cout<< "in: " << from << "\n";
-  if(from == to) { return result; }
-  for(int i = 0; i< adj[from].size(); i++) {
-    int child = adj[from][i];
-    // std::cout<< "child: " << child << "\n";
-    if(result[child] > result[from] + cost[from][i]) {
-     result[child] = result[from] + cost[from][i];
-     run(adj, cost, child, to, result);
-   }
-    
+
+
+int distance(vector<vector<int> > &adj, vector<vector<int> > &cost, int s, int t) {
+  //write your code her
+  std::unordered_map<int, long long> dist;
+  std::vector<long long> prev(adj.size(), -1);
+  for (int i = 0; i < adj.size(); ++i) {
+    dist[i] = std::numeric_limits<int>::max();
   }
 
-  return result;
-}
+  dist[s] = 0;
 
-int distance(vector<vector<int> > &adj, vector<vector<int> > &cost, int from, int to) {
-  vector<int> result(adj.size());
-  for(int i = 0; i < result.size(); ++i) {
-    if(i == from) {result[i] = 0;} else { result[i] = std::numeric_limits<int>::max();}
+  auto cmp = [&dist](int left, int right) { return dist[left] > dist[right ]; };
+  std::priority_queue<int, std::vector<int>, decltype(cmp) > h(cmp);
+
+  for (int i = 0; i < adj.size(); ++i) {
+    h.push(i);
   }
-  int r = run(adj,cost, from, to, result)[to];
-  
-  return r == std::numeric_limits<int>::max() ? -1 : r;
+
+  while (!h.empty()) {
+    int u = h.top();
+    h.pop();
+
+    const auto& edges = adj[u];
+    for (auto v : edges) {
+      int w = cost[u][v];
+        if (dist[v] > (dist[u] + w)) {
+          dist[v] = dist[ u ] + w;
+          prev[v] = u;
+          h.push(v);
+        }
+      
+    }
+  }
+
+  int tmp = t;
+  int sum = 0;
+  while (tmp != s) {
+    if (tmp == -1 || prev[tmp] == -1) return -1;
+    int w = cost[prev[tmp]][tmp];
+    if (w == -1) return -1;
+    sum += w;
+    tmp = prev[tmp];
+  }
+  return sum;
 }
 
-int main() {
+int main()
+{
   int n, m;
   std::cin >> n >> m;
-  vector<vector<int> > adj(n, vector<int>());
-  vector<vector<int> > cost(n, vector<int>());
-  for (int i = 0; i < m; i++) {
+  vector< vector< int > > adj( n, vector< int >() );
+  vector< vector< int > > cost( n, vector< int >( n, -1 ) );
+
+  for (int i = 0; i < m; i++)
+  {
     int x, y, w;
     std::cin >> x >> y >> w;
-    adj[x - 1].push_back(y - 1);
-    cost[x - 1].push_back(w);
+    adj[ x - 1 ].push_back( y - 1 );
+    //cost[ x - 1 ].push_back( w );
+    cost[x - 1][y - 1] = w;
   }
   int s, t;
   std::cin >> s >> t;
   s--, t--;
-  std::cout << distance(adj, cost, s, t);
+  std::cout << distance( adj, cost, s, t );
+  return 0;
 }
